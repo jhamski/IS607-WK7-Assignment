@@ -1,0 +1,72 @@
+---
+title: "IS607 - WK7 Assignment"
+author: "J. Hamski"
+date: "March 15, 2015"
+output: html_document
+---
+
+In a recent mythical poll in Scotland, voters were asked if they preferred Cullen skink over Partan bree. Here are the results of the poll, with results broken down by city and by age group. [data.csv]
+
+1. Write down 3 questions that you might want to answer based on this data.
+2. Create an R data frame with 2 observations to convert the data frame to be “tidy data.”
+4. Use the functionality in the dplyr package to answer the questions that you asked in step 1.
+5. Having gone through the process, would you ask different questions and/or change the way that
+you structured your data frame?
+
+Questions:
+- What proportion of the survey population were in each age group?
+- What is the overall soup preference?
+- What city shows the largest variation in preference by age?
+
+```{r}
+input <- read.csv("data.csv", skip = 1, header = FALSE, stringsAsFactors=FALSE)
+input <- input[-1]
+cities <- c("Edinburgh","Edinburgh", "Glasgow", "Glasgow")
+input <- rbind(input, cities)
+```
+
+In tidy data, each variable is saved in its own column and each observation is saved in its own row. 
+
+```{r, warning=FALSE}
+library(tidyr)
+library(dplyr)
+library(reshape2)
+
+survey <- data.frame(t(input), check.names = FALSE)
+colnames(survey)<-c("age","yes","no","city")
+survey <- gather(survey, age, city, 2:3)
+colnames(survey)<-c("age", "city", "vote", "count")
+survey$count <- as.numeric(survey$count)
+```
+  
+- What proportion of the survey population were in each age group?
+```{r}
+old <- sum(filter(survey, age == "25+")$count)
+young <- sum(filter(survey, age =="16-24")$count)
+
+young/sum(survey$count)
+old/sum(survey$count)
+
+```
+
+
+- What is the overall soup preference?
+```{r}
+yes <- sum(filter(survey, vote =="yes")$count)
+no <- sum(filter(survey, vote =="no")$count)
+yes/sum(survey$count)
+no/sum(survey$count)
+```
+
+
+- What city shows the largest variation in preference by age?
+```{r}
+ed.young <- sum(filter(survey, city =="Edinburgh" & age =="16-24")$count)
+ed.old <- sum(filter(survey, city =="Edinburgh" & age == "25+")$count)
+ed.old - ed.young
+gl.young <- sum(filter(survey, city =="Glasgow" & age =="16-24")$count)
+gl.old <- sum(filter(survey, city =="Glasgow" & age == "25+")$count)
+gl.old - gl.young
+```
+
+This exercise was harder than anticipated. I would have asked questions that focused on a single outcome - ie how many yes votes came from Edinburgh, if I wanted an easier time. Combining facets, like age and city, with a Bernoilli random variable (yes/no) creates a more difficult structure to answer questions that combine facet categories and both yes/no outcomes. 
